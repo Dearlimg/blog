@@ -1,0 +1,7 @@
+app:
+  name: Blog
+  version : v0.0.0
+  start_time : 2025.5.7
+  port : 8002
+mysql:
+  dns : root:Gao12345@tcp(123.249.32.125:3307)/blog?charset=utf8mb4&parseTime=True&loc=Local
