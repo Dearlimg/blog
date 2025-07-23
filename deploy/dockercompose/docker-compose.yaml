@@ -1,0 +1,49 @@
+version: '3'
+
+#  这个是写给软协go组的基础软件的docker-compose,把这个复制到服务器的一个熟悉的文件夹,然后执行:docker compose up -d (前提是安装了docker)
+#  端口映射,文件挂载,时区都搞了,如果配置redis配置文件的时候有问题,到时候你们会自己修改的
+#  需要密码的都是: sta_go
+#  如果kafka执行失败,大概率是因为读写权限的问题,执行这个:
+#  chmod -R 777 components
+
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+    container_name: redis
+    volumes:
+      - ./components/redis/data:/data
+      - ./components/redis/config/redis.conf:/usr/local/redis/config/redis.conf     # 完了你们自己会修改这里的
+    environment:
+      TZ: Asia/Shanghai
+    restart: always
+    command: redis-server --requirepass sta_go --appendonly yes
+
+  mysql:
+    image: mysql:latest
+    ports:
+      - 3307:3306     # 一般3306容易被挟持,一般换个端口
+    container_name: mysql
+    volumes:
+      - ./components/mysql/data:/var/lib/mysql
+      - /etc/localtime:/etc/localtime
+    environment:
+      MYSQL_ROOT_PASSWORD: sta_go
+      TZ: Asia/Shanghai
+    restart: always
+
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - 9092:9092
+    container_name: kafka
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://123.249.32.125:9092   # 添加服务器ip:port
+    restart: always
