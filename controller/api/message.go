@@ -3,7 +3,7 @@ package api
 import (
 	"blog/logic"
 	"blog/model/request"
-	"fmt"
+	"blog/pkg/logger"
 	"github.com/Dearlimg/Goutils/pkg/app"
 	"github.com/Dearlimg/Goutils/pkg/app/errcode"
 	"github.com/gin-gonic/gin"
@@ -11,7 +11,7 @@ import (
 
 type message struct{}
 
-func (message) GetMessage(ctx *gin.Context) () {
+func (message) GetMessage(ctx *gin.Context) {
 	rly := app.NewResponse(ctx)
 	res, err := logic.Logics.Message.GetMessage(ctx)
 	if err != nil {
@@ -28,7 +28,10 @@ func (message) PostMessage(ctx *gin.Context) {
 		rly.Reply(errcode.ErrParamsNotValid.WithDetails(err.Error()))
 		return
 	}
-	fmt.Println(param)
+	logger.Debug("Received message creation request",
+		logger.String("name", param.Name),
+		logger.String("email", param.Email),
+	)
 	// 构造业务参数
 	logicParam := &request.ParamCreateMessage{
 		Name:    param.Name,
@@ -37,8 +40,11 @@ func (message) PostMessage(ctx *gin.Context) {
 	}
 
 	if err := logic.Logics.Message.PostMessage(ctx, logicParam); err != nil {
+		logger.Error("PostMessage failed",
+			logger.ErrorField(err),
+			logger.String("name", logicParam.Name),
+		)
 		rly.Reply(err)
-		fmt.Println("postmessage logic", err)
 		return
 	}
 

@@ -2,8 +2,8 @@ package router
 
 import (
 	"blog/middleware"
+	"blog/pkg/logger"
 	"blog/routers"
-	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +15,9 @@ func NewRouter() *gin.Engine {
 
 	// 初始化 Redis 布隆过滤器
 	if err := middleware.InitRedisBloomFilter(); err != nil {
-		fmt.Printf("Failed to init Redis Bloom Filter: %v\n", err)
+		logger.Warn("Failed to init Redis Bloom Filter",
+			logger.ErrorField(err),
+		)
 	}
 
 	root := r.Group("api")
@@ -46,11 +48,18 @@ func collectRoutesAndAddToBloom(r *gin.Engine) {
 		if !paths[fullPath] {
 			paths[fullPath] = true
 			if err := middleware.AddPath(fullPath); err != nil {
-				fmt.Printf("Failed to add path to bloom filter: %s, error: %v\n", fullPath, err)
+				logger.Warn("Failed to add path to bloom filter",
+					logger.String("path", fullPath),
+					logger.ErrorField(err),
+				)
 			} else {
-				fmt.Printf("Added path to bloom filter: %s\n", fullPath)
+				logger.Debug("Added path to bloom filter",
+					logger.String("path", fullPath),
+				)
 			}
 		}
 	}
-	fmt.Printf("Total paths added to bloom filter: %d\n", len(paths))
+	logger.Info("Bloom filter initialized",
+		logger.Int("total_paths", len(paths)),
+	)
 }

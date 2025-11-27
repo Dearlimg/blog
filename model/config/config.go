@@ -4,6 +4,7 @@ type Config struct {
 	App   AppConfig   `yaml:"app"`
 	MySQL MySQLConfig `yaml:"mysql"`
 	Redis RedisConfig `yaml:"redis"`
+	Log   LogConfig   `yaml:"log"`
 }
 
 type AppConfig struct {
@@ -21,4 +22,15 @@ type RedisConfig struct {
 	Addr     string `yaml:"addr"`
 	Password string `yaml:"password"`
 	DB       int    `yaml:"db"`
+}
+
+type LogConfig struct {
+	Level      string `yaml:"level"`       // 日志级别: debug, info, warn, error
+	Format     string `yaml:"format"`      // 日志格式: json, text
+	Output     string `yaml:"output"`      // 输出位置: stdout, file, both
+	FilePath   string `yaml:"file_path"`   // 日志文件路径（当 output 为 file 或 both 时）
+	MaxSize    int    `yaml:"max_size"`    // 单个日志文件最大大小（MB）
+	MaxBackups int    `yaml:"max_backups"` // 保留的备份文件数量
+	MaxAge     int    `yaml:"max_age"`     // 保留日志文件的天数
+	Compress   bool   `yaml:"compress"`    // 是否压缩旧日志文件
 }

@@ -2,8 +2,8 @@ package setting
 
 import (
 	"blog/global"
+	"blog/pkg/logger"
 	"context"
-	"fmt"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -22,9 +22,13 @@ func (redisConfig) Init() {
 	// 测试连接
 	_, err := global.RedisClient.Ping(ctx).Result()
 	if err != nil {
-		fmt.Printf("Redis connection failed: %v\n", err)
+		logger.Warn("Redis connection failed, service will continue without Redis",
+			logger.ErrorField(err),
+		)
 		// 不 panic，允许服务继续运行（布隆过滤器会在中间件中处理错误）
 	} else {
-		fmt.Println("Redis connected successfully")
+		logger.Info("Redis connected successfully",
+			logger.String("addr", global.Config.Redis.Addr),
+		)
 	}
 }

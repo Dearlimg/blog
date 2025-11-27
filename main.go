@@ -2,10 +2,10 @@ package main
 
 import (
 	"blog/global"
+	"blog/pkg/logger"
 	"blog/routers/router"
 	"blog/setting"
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +15,7 @@ import (
 
 func main() {
 	setting.Init()
+	defer logger.Sync()
 
 	r := router.NewRouter()
 
@@ -24,15 +25,19 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	fmt.Println("Server Name:", global.Config.App.Name)
-	fmt.Println("server start at:", global.Config.App.Port)
+	logger.Info("Server starting",
+		logger.String("name", global.Config.App.Name),
+		logger.String("port", global.Config.App.Port),
+		logger.String("version", global.Config.App.Version),
+	)
 
 	errChan := make(chan error, 1)
 	defer close(errChan)
 
 	go func() {
 		err := server.ListenAndServe()
-		if err != nil {
+		if err != nil && err != http.ErrServerClosed {
+			logger.Error("Server failed to start", logger.ErrorField(err))
 			errChan <- err
 		}
 	}()
@@ -42,13 +47,15 @@ func main() {
 
 	select {
 	case err := <-errChan:
-		fmt.Println("err:", err)
+		logger.Error("Server error", logger.ErrorField(err))
 	case <-quit:
-		fmt.Println("server shutdown...")
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		logger.Info("Server shutting down...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := server.Shutdown(ctx); err != nil {
-			fmt.Println("Server Shutdown:", err)
+			logger.Error("Server shutdown error", logger.ErrorField(err))
+		} else {
+			logger.Info("Server shutdown successfully")
 		}
 	}
 }

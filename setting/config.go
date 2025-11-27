@@ -36,5 +36,6 @@ func (conf) Init() {
 		panic("MySQL.DSN is required in config file")
 	}
 
-	fmt.Printf("Config loaded successfully from: %s\n", configPath)
+	// 注意：这里还不能使用 logger，因为 logger 还没初始化
+	// 使用 fmt 输出，或者等 logger 初始化后再记录
 }

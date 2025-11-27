@@ -5,6 +5,7 @@ import (
 	"blog/dao/mysql"
 	msgdao "blog/dao/mysql/message"
 	"blog/global"
+	"blog/pkg/logger"
 	"fmt"
 )
 
@@ -21,5 +22,9 @@ func (database) Init() {
 	dao.Database.DB = db
 	dao.Database.Message = msgdao.NewDAO(db)
 
-	fmt.Println("Database connected successfully with GORM")
+	// 使用 logger 记录（如果已初始化）
+	// 注意：这里 logger 可能还没初始化，所以先检查
+	if logger.GetLogger() != nil {
+		logger.Info("Database connected successfully with GORM")
+	}
 }

@@ -1,0 +1,33 @@
+{"level":"INFO","timestamp":"2025-11-27T19:45:48.956+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-27T19:45:49.347+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-27T19:45:49.394+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-27T19:45:49.502+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
+{"level":"INFO","timestamp":"2025-11-27T19:45:49.502+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:10.797+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-27T19:54:10.797+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:13.592+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:13.963+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:14.014+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:14.126+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
+{"level":"INFO","timestamp":"2025-11-27T19:54:14.127+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:38.981+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-27T19:54:38.981+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:40.055+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:40.414+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:40.457+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-27T19:54:40.564+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
+{"level":"INFO","timestamp":"2025-11-27T19:54:40.564+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:09.028+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:09.760+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:10.407+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:10.955+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:11.479+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:12.042+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:12.600+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:13.116+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:13.617+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:14.085+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:14.588+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:15.101+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:15.603+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:02:16.085+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
