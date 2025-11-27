@@ -1,11 +1,14 @@
 package dao
 
 import (
-	"blog/dao/mysql"
+	"blog/dao/mysql/message"
+
+	"gorm.io/gorm"
 )
 
 type database struct {
-	DB mysql.DB
+	DB      *gorm.DB
+	Message *message.DAO
 }
 
 var Database = new(database)

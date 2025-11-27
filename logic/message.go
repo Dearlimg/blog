@@ -28,7 +28,7 @@ func (message) GetMessage(ctx *gin.Context) ([]reply.ReplyMessage, errcode.Err) 
 
 	// 2. 缓存未命中或出错，查数据库
 	log.Printf("Cache miss or error, querying database")
-	rly, err := dao.Database.DB.GetMessage(ctx)
+	rly, err := dao.Database.Message.GetMessage(ctx)
 	if err != nil {
 		return nil, errcode.ErrServer
 	}
@@ -73,7 +73,7 @@ func (m *message) PostMessage(ctx *gin.Context, param *request.ParamCreateMessag
 	}
 
 	// 1. 先写入数据库
-	if err := dao.Database.DB.CreateMessage(ctx, message); err != nil {
+	if err := dao.Database.Message.CreateMessage(ctx, message); err != nil {
 		log.Printf("CreateMessage failed: %v", err)
 		return errcode.ErrServer
 	}
