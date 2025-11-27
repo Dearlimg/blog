@@ -3,32 +3,34 @@ package api
 import (
 	"blog/logic"
 	"blog/model/request"
+	"blog/pkg/errcode"
 	"blog/pkg/logger"
-	"github.com/Dearlimg/Goutils/pkg/app"
-	"github.com/Dearlimg/Goutils/pkg/app/errcode"
+	"blog/pkg/response"
+
 	"github.com/gin-gonic/gin"
 )
 
 type message struct{}
 
 func (message) GetMessage(ctx *gin.Context) {
-	rly := app.NewResponse(ctx)
+	rly := response.NewResponse(ctx)
 	res, err := logic.Logics.Message.GetMessage(ctx)
 	if err != nil {
+		rly.Reply(err)
 		return
 	}
-	rly.Reply(err, res)
+	rly.Reply(nil, res)
 }
 
 func (message) PostMessage(ctx *gin.Context) {
-	rly := app.NewResponse(ctx)
+	rly := response.NewResponse(ctx)
 
 	param := &request.ParamCreateMessage{}
 	if err := ctx.ShouldBindJSON(param); err != nil {
 		rly.Reply(errcode.ErrParamsNotValid.WithDetails(err.Error()))
 		return
 	}
-	logger.Debug("Received message creation request",
+	logger.DebugWithCtx(ctx, "Received message creation request",
 		logger.String("name", param.Name),
 		logger.String("email", param.Email),
 	)
@@ -39,8 +41,9 @@ func (message) PostMessage(ctx *gin.Context) {
 		Content: param.Content,
 	}
 
-	if err := logic.Logics.Message.PostMessage(ctx, logicParam); err != nil {
-		logger.Error("PostMessage failed",
+	res, err := logic.Logics.Message.PostMessage(ctx, logicParam)
+	if err != nil {
+		logger.ErrorWithCtx(ctx, "PostMessage failed",
 			logger.ErrorField(err),
 			logger.String("name", logicParam.Name),
 		)
@@ -48,7 +51,7 @@ func (message) PostMessage(ctx *gin.Context) {
 		return
 	}
 
-	rly.Reply(nil)
+	rly.Reply(nil, res)
 }
 
 //func (message) PostMessage(ctx *gin.Context) {

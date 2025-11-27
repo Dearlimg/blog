@@ -31,3 +31,28 @@
 {"level":"INFO","timestamp":"2025-11-27T20:02:15.101+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
 {"level":"INFO","timestamp":"2025-11-27T20:02:15.603+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
 {"level":"INFO","timestamp":"2025-11-27T20:02:16.085+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:16:58.681+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-27T20:16:58.681+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-27T20:17:01.370+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-27T20:17:01.732+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-27T20:17:01.782+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-27T20:17:01.887+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
+{"level":"INFO","timestamp":"2025-11-27T20:17:01.887+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-27T20:17:39.948+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com"}
+{"level":"INFO","timestamp":"2025-11-27T20:19:49.342+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-27T20:19:49.343+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-27T20:19:59.685+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-27T20:20:00.112+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-27T20:20:00.177+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-27T20:20:00.361+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
+{"level":"INFO","timestamp":"2025-11-27T20:20:00.361+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-27T20:20:10.664+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com","id":36}
+{"level":"INFO","timestamp":"2025-11-27T20:24:39.052+0800","caller":"logger/log.go:16","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com","id":37}
+{"level":"INFO","timestamp":"2025-11-27T20:25:24.359+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-27T20:25:24.360+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-27T20:25:26.847+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-27T20:25:27.212+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-27T20:25:27.262+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-27T20:25:27.376+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
+{"level":"INFO","timestamp":"2025-11-27T20:25:27.376+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-27T20:25:28.806+0800","caller":"logger/context.go:58","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com","id":38,"request_id":"9a85ae78-64f3-4f44-8329-e30b8181c845","trace_id":"9a85ae78-64f3-4f44-8329-e30b8181c845"}

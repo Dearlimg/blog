@@ -3,6 +3,7 @@ package router
 import (
 	"blog/middleware"
 	"blog/pkg/logger"
+	"blog/pkg/response"
 	"blog/routers"
 	"strings"
 
@@ -11,9 +12,10 @@ import (
 
 func NewRouter() *gin.Engine {
 	r := gin.New()
+	// 请求ID中间件应该最早添加，以便后续中间件和处理器可以使用
+	r.Use(middleware.RequestIDMiddleware())
 	r.Use(gin.Recovery(), gin.Logger(), middleware.CorsMiddleware())
 
-	// 初始化 Redis 布隆过滤器
 	if err := middleware.InitRedisBloomFilter(); err != nil {
 		logger.Warn("Failed to init Redis Bloom Filter",
 			logger.ErrorField(err),
@@ -23,9 +25,8 @@ func NewRouter() *gin.Engine {
 	root := r.Group("api")
 	{
 		root.GET("ping", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "pong",
-			})
+			rly := response.NewResponse(c)
+			rly.SuccessWithMessage("pong", nil)
 		})
 		rg := routers.Routers
 		rg.Message.Init(root)
