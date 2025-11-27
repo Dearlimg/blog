@@ -2,14 +2,14 @@ package logic
 
 import (
 	"blog/dao"
-	mysql2 "blog/dao/mysql/sqlc"
+	"blog/model/entity"
 	"blog/model/reply"
 	"blog/model/request"
 	"blog/service"
-	"database/sql"
 	"github.com/Dearlimg/Goutils/pkg/app/errcode"
 	"github.com/gin-gonic/gin"
 	"log"
+	"time"
 )
 
 type message struct{}
@@ -40,8 +40,8 @@ func (message) GetMessage(ctx *gin.Context) ([]reply.ReplyMessage, errcode.Err) 
 			Id:        msg.ID,
 			Name:      msg.Name,
 			Email:     msg.Email,
-			Content:   msg.Content.String,
-			Create_at: msg.CreateAt.Time,
+			Content:   msg.Content,
+			Create_at: msg.CreateAt,
 		})
 	}
 
@@ -57,12 +57,6 @@ func (message) GetMessage(ctx *gin.Context) ([]reply.ReplyMessage, errcode.Err) 
 	return result, nil
 }
 
-type CreateMessageParams struct {
-	Name    string
-	Email   string
-	Content sql.NullString
-}
-
 // PostMessage 创建新评论（实现旁路缓存策略：写入后删除缓存）
 func (m *message) PostMessage(ctx *gin.Context, param *request.ParamCreateMessage) errcode.Err {
 	// 校验输入参数
@@ -70,22 +64,16 @@ func (m *message) PostMessage(ctx *gin.Context, param *request.ParamCreateMessag
 		return errcode.ErrParamsNotValid.WithDetails("nil parameter")
 	}
 
-	// 正确初始化结构体
-	params := &CreateMessageParams{
-		Name:    param.Name,
-		Email:   param.Email,
-		Content: sql.NullString{Valid: true, String: param.Content},
-	}
-
-	// 转换数据库参数
-	dbParams := mysql2.CreateMessageParams{
-		Name:    params.Name,
-		Email:   params.Email,
-		Content: params.Content,
+	// 创建 GORM 模型
+	message := &entity.Message{
+		Name:     param.Name,
+		Email:    param.Email,
+		Content:  param.Content,
+		CreateAt: time.Now(),
 	}
 
 	// 1. 先写入数据库
-	if err := dao.Database.DB.CreateMessage(ctx, &dbParams); err != nil {
+	if err := dao.Database.DB.CreateMessage(ctx, message); err != nil {
 		log.Printf("CreateMessage failed: %v", err)
 		return errcode.ErrServer
 	}
@@ -102,20 +90,3 @@ func (m *message) PostMessage(ctx *gin.Context, param *request.ParamCreateMessag
 
 	return nil
 }
-
-//func (message) PostMessage(ctx *gin.Context, param *request.ParamCreateMessage) errcode.Err {
-//	var params *CreateMessageParams
-//	fmt.Println(param, param.Content)
-//	params.Name = param.Name
-//	params.Email = param.Email
-//	params.Content = sql.NullString{
-//		Valid:  true,
-//		String: param.Content,
-//	}
-//	fmt.Println(params)
-//	err := dao.Database.DB.CreateMessage(ctx, (*mysql2.CreateMessageParams)(params))
-//	if err != nil {
-//		return errcode.ErrServer
-//	}
-//	return nil
-//}
