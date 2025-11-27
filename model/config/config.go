@@ -1,7 +1,5 @@
 package config
 
-import "time"
-
 type Config struct {
 	App   AppConfig   `yaml:"app"`
 	MySQL MySQLConfig `yaml:"mysql"`
@@ -9,10 +7,10 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Name      string    `yaml:"name"`
-	Version   string    `yaml:"version"`
-	StartTime time.Time `yaml:"start_time"`
-	Port      string    `yaml:"port"`
+	Name      string `yaml:"name"`
+	Version   string `yaml:"version"`
+	StartTime string `yaml:"start_time"` // 使用字符串类型，避免解析问题
+	Port      string `yaml:"port"`
 }
 
 type MySQLConfig struct {

@@ -1,7 +1,11 @@
 app:
   name: Blog
-  version : v0.0.0
-  start_time : 2025.5.7
-  port : 8002
+  version: v0.0.0
+  start_time: 2025.5.7
+  port: 0.0.0.0:8002
 mysql:
-  dns : root:Gao12345@tcp(123.249.32.125:3307)/blog?charset=utf8mb4&parseTime=True&loc=Local
+  dns: root:sta_go@tcp(47.118.19.28:3307)/blog?charset=utf8mb4&parseTime=True&loc=Local
+redis:
+  addr: 47.118.19.28:6379
+  password: sta_go
+  db: 0
