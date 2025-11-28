@@ -19,3 +19,33 @@ type ParamChatbotChat struct {
 	Message string `json:"message" binding:"required"` // 用户消息
 	Stream  bool   `json:"stream,omitempty"`           // 是否使用流式响应，默认false
 }
+
+// ParamGetChatHistory 获取对话历史的请求参数（分页）
+type ParamGetChatHistory struct {
+	Page     int `form:"page" binding:"omitempty,min=1"`              // 页码，从1开始，默认1
+	PageSize int `form:"page_size" binding:"omitempty,min=1,max=100"` // 每页数量，默认10，最大100
+}
+
+// GetPage 获取页码，默认1
+func (p *ParamGetChatHistory) GetPage() int {
+	if p.Page <= 0 {
+		return 1
+	}
+	return p.Page
+}
+
+// GetPageSize 获取每页数量，默认10
+func (p *ParamGetChatHistory) GetPageSize() int {
+	if p.PageSize <= 0 {
+		return 10
+	}
+	if p.PageSize > 100 {
+		return 100
+	}
+	return p.PageSize
+}
+
+// GetOffset 获取偏移量
+func (p *ParamGetChatHistory) GetOffset() int {
+	return (p.GetPage() - 1) * p.GetPageSize()
+}

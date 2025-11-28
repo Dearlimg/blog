@@ -178,19 +178,22 @@ func (e *eino) GetChatHistory(ctx *gin.Context) {
 		return
 	}
 
-	limitStr := ctx.DefaultQuery("limit", "20")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil {
-		limit = 20
+	// 绑定分页参数
+	param := &request.ParamGetChatHistory{}
+	if err := ctx.ShouldBindQuery(param); err != nil {
+		rly.Reply(errcode.ErrParamsNotValid.WithDetails(err.Error()))
+		return
 	}
 
-	res, errCode := logic.Logics.Eino.GetChatHistory(ctx, int32(chatbotID), limit)
+	// 调用逻辑层获取分页数据
+	res, pageInfo, errCode := logic.Logics.Eino.GetChatHistory(ctx, int32(chatbotID), param)
 	if errCode != nil {
 		rly.Reply(errCode)
 		return
 	}
 
-	rly.Reply(nil, res)
+	// 返回带分页信息的响应
+	rly.SuccessWithPage(res, pageInfo)
 }
 
 // handleChatbotStreamChat 处理流式聊天

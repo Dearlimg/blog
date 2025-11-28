@@ -508,12 +508,12 @@ func (e *eino) ChatbotChat(ctx *gin.Context, chatbotID int32, param *request.Par
 		return nil, errcode.ErrResourceNotFound.WithDetails("chatbot not found")
 	}
 
-	// 获取对话历史
+	// 获取最新的对话历史（用于聊天上下文）
 	maxHistory := global.Config.Eino.MaxHistory
 	if maxHistory == 0 {
 		maxHistory = 20 // 默认值
 	}
-	history, err := dao.Database.Chatbot.GetChatHistory(ctx, chatbotID, maxHistory)
+	history, err := dao.Database.Chatbot.GetLatestChatHistory(ctx, chatbotID, maxHistory)
 	if err != nil {
 		logger.WarnWithCtx(ctx, "Failed to get chat history",
 			logger.ErrorField(err),
@@ -600,12 +600,12 @@ func (e *eino) ChatbotChatStream(ctx *gin.Context, chatbotID int32, param *reque
 		return nil, fmt.Errorf("chatbot not found: %w", err)
 	}
 
-	// 获取对话历史
+	// 获取最新的对话历史（用于聊天上下文）
 	maxHistory := global.Config.Eino.MaxHistory
 	if maxHistory == 0 {
 		maxHistory = 20 // 默认值
 	}
-	history, err := dao.Database.Chatbot.GetChatHistory(ctx, chatbotID, maxHistory)
+	history, err := dao.Database.Chatbot.GetLatestChatHistory(ctx, chatbotID, maxHistory)
 	if err != nil {
 		logger.WarnWithCtx(ctx, "Failed to get chat history",
 			logger.ErrorField(err),
@@ -666,16 +666,36 @@ func (e *eino) SaveChatHistory(ctx context.Context, chatbotID int32, role, conte
 	}
 }
 
-// GetChatHistory 获取对话历史
-func (e *eino) GetChatHistory(ctx *gin.Context, chatbotID int32, limit int) (*reply.ChatHistoryResponse, errcode.Err) {
-	history, err := dao.Database.Chatbot.GetChatHistory(ctx, chatbotID, limit)
+// GetChatHistory 获取对话历史（分页）
+func (e *eino) GetChatHistory(ctx *gin.Context, chatbotID int32, param *request.ParamGetChatHistory) (*reply.ChatHistoryResponse, *reply.PageInfo, errcode.Err) {
+	page := param.GetPage()
+	pageSize := param.GetPageSize()
+
+	logger.DebugWithCtx(ctx, "GetChatHistory with pagination",
+		logger.Int32("chatbot_id", chatbotID),
+		logger.Int("page", page),
+		logger.Int("page_size", pageSize),
+	)
+
+	// 1. 查询数据列表
+	history, err := dao.Database.Chatbot.GetChatHistory(ctx, chatbotID, page, pageSize)
 	if err != nil {
 		logger.ErrorWithCtx(ctx, "GetChatHistory failed",
 			logger.ErrorField(err),
 		)
-		return nil, errcode.ErrServer.WithDetails(err.Error())
+		return nil, nil, errcode.ErrServer.WithDetails(err.Error())
 	}
 
+	// 2. 统计总数
+	total, err := dao.Database.Chatbot.CountChatHistory(ctx, chatbotID)
+	if err != nil {
+		logger.ErrorWithCtx(ctx, "CountChatHistory failed",
+			logger.ErrorField(err),
+		)
+		return nil, nil, errcode.ErrServer.WithDetails(err.Error())
+	}
+
+	// 3. 转换数据格式
 	list := make([]reply.ChatHistoryItem, 0, len(history))
 	for _, h := range history {
 		list = append(list, reply.ChatHistoryItem{
@@ -686,7 +706,18 @@ func (e *eino) GetChatHistory(ctx *gin.Context, chatbotID int32, limit int) (*re
 		})
 	}
 
-	return &reply.ChatHistoryResponse{
+	// 4. 构建分页信息
+	pageInfo := reply.NewPageInfo(page, pageSize, total)
+
+	// 5. 构建响应
+	result := &reply.ChatHistoryResponse{
 		List: list,
-	}, nil
+	}
+
+	logger.DebugWithCtx(ctx, "GetChatHistory success",
+		logger.Int("count", len(list)),
+		logger.Int64("total", total),
+	)
+
+	return result, pageInfo, nil
 }

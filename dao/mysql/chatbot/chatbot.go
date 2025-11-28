@@ -86,17 +86,52 @@ func (d *DAO) AddChatHistory(ctx context.Context, history *entity.ChatHistory) e
 	return nil
 }
 
-// GetChatHistory 获取对话历史
-func (d *DAO) GetChatHistory(ctx context.Context, chatbotID int32, limit int) ([]*entity.ChatHistory, error) {
+// GetChatHistory 获取对话历史（按时间升序，用于列表展示，支持分页）
+func (d *DAO) GetChatHistory(ctx context.Context, chatbotID int32, page, pageSize int) ([]*entity.ChatHistory, error) {
 	var history []*entity.ChatHistory
-	query := d.db.WithContext(ctx).Where("chatbot_id = ?", chatbotID).Order("created_at ASC")
+	offset := (page - 1) * pageSize
+	query := d.db.WithContext(ctx).
+		Where("chatbot_id = ?", chatbotID).
+		Order("created_at ASC").
+		Offset(offset).
+		Limit(pageSize)
+	err := query.Find(&history).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chat history: %w", err)
+	}
+	return history, nil
+}
+
+// CountChatHistory 统计对话历史总数
+func (d *DAO) CountChatHistory(ctx context.Context, chatbotID int32) (int64, error) {
+	var count int64
+	err := d.db.WithContext(ctx).
+		Model(&entity.ChatHistory{}).
+		Where("chatbot_id = ?", chatbotID).
+		Count(&count).Error
+	if err != nil {
+		return 0, fmt.Errorf("failed to count chat history: %w", err)
+	}
+	return count, nil
+}
+
+// GetLatestChatHistory 获取最新的对话历史（按时间降序取前N条，然后反转以保持时间顺序，用于聊天上下文）
+func (d *DAO) GetLatestChatHistory(ctx context.Context, chatbotID int32, limit int) ([]*entity.ChatHistory, error) {
+	var history []*entity.ChatHistory
+	query := d.db.WithContext(ctx).Where("chatbot_id = ?", chatbotID).Order("created_at DESC")
 	if limit > 0 {
 		query = query.Limit(limit)
 	}
 	err := query.Find(&history).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to get chat history: %w", err)
+		return nil, fmt.Errorf("failed to get latest chat history: %w", err)
 	}
+
+	// 反转切片，使其按时间升序排列（从旧到新）
+	for i, j := 0, len(history)-1; i < j; i, j = i+1, j-1 {
+		history[i], history[j] = history[j], history[i]
+	}
+
 	return history, nil
 }
 
