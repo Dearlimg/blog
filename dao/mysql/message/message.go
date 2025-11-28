@@ -26,7 +26,7 @@ func (d *DAO) GetMessage(ctx context.Context, page, pageSize int) ([]*entity.Mes
 	offset := (page - 1) * pageSize
 	err := d.db.WithContext(ctx).
 		Where("id > ?", 0).
-		Order("create_at DESC").
+		Order("create_at ASC").
 		Offset(offset).
 		Limit(pageSize).
 		Find(&messages).Error

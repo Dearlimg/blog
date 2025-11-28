@@ -125,3 +125,26 @@
 {"level":"INFO","timestamp":"2025-11-28T15:28:36.157+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
 {"level":"INFO","timestamp":"2025-11-28T15:29:18.272+0800","caller":"logger/context.go:58","msg":"ChatbotChat completed","chatbot_id":2,"duration_ms":38788,"request_id":"0b09cfc8-eba3-4d00-8ebc-2f7a2af9e3a2","trace_id":"0b09cfc8-eba3-4d00-8ebc-2f7a2af9e3a2"}
 {"level":"INFO","timestamp":"2025-11-28T15:32:01.487+0800","caller":"logger/context.go:58","msg":"ChatbotChat completed","chatbot_id":2,"duration_ms":22649,"request_id":"d194afd1-c0b6-4a95-8c93-4e7a05dccb40","trace_id":"d194afd1-c0b6-4a95-8c93-4e7a05dccb40"}
+{"level":"INFO","timestamp":"2025-11-28T15:43:22.062+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-28T15:43:22.063+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-28T15:43:24.773+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-28T15:43:25.200+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-28T15:43:25.348+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-28T15:43:25.836+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":10}
+{"level":"INFO","timestamp":"2025-11-28T15:43:25.836+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-28T15:44:10.341+0800","caller":"logger/context.go:58","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com","id":40,"request_id":"3be35e75-4697-47db-9e83-655eaf4847b0","trace_id":"3be35e75-4697-47db-9e83-655eaf4847b0"}
+{"level":"INFO","timestamp":"2025-11-28T15:44:24.352+0800","caller":"logger/context.go:58","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com","id":41,"request_id":"b358b81d-f089-4b80-acd1-4a7c47749afe","trace_id":"b358b81d-f089-4b80-acd1-4a7c47749afe"}
+{"level":"INFO","timestamp":"2025-11-28T15:46:03.232+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-28T15:46:03.233+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-28T15:46:05.200+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-28T15:46:05.623+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-28T15:46:05.670+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-28T15:46:06.062+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":10}
+{"level":"INFO","timestamp":"2025-11-28T15:46:06.063+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-28T15:47:14.421+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-28T15:47:14.421+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-28T15:47:15.989+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-28T15:47:16.414+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-28T15:47:16.481+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-28T15:47:16.905+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":10}
+{"level":"INFO","timestamp":"2025-11-28T15:47:16.906+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
