@@ -56,3 +56,49 @@
 {"level":"INFO","timestamp":"2025-11-27T20:25:27.376+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
 {"level":"INFO","timestamp":"2025-11-27T20:25:27.376+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
 {"level":"INFO","timestamp":"2025-11-27T20:25:28.806+0800","caller":"logger/context.go:58","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com","id":38,"request_id":"9a85ae78-64f3-4f44-8329-e30b8181c845","trace_id":"9a85ae78-64f3-4f44-8329-e30b8181c845"}
+{"level":"INFO","timestamp":"2025-11-27T20:26:13.820+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-27T20:26:13.821+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-27T20:26:15.123+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-27T20:26:15.490+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-27T20:26:15.541+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-27T20:26:15.653+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
+{"level":"INFO","timestamp":"2025-11-27T20:26:15.653+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-28T10:07:17.939+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-28T10:07:18.297+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-28T10:07:18.346+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-28T10:07:18.452+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
+{"level":"INFO","timestamp":"2025-11-28T10:07:18.452+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-28T10:25:03.056+0800","caller":"logger/context.go:58","msg":"Message created successfully","name":"durlim","email":"1492568061@qq.com","id":39,"request_id":"72879163-d959-46e4-a872-0c90dce6858f","trace_id":"72879163-d959-46e4-a872-0c90dce6858f"}
+{"level":"INFO","timestamp":"2025-11-28T11:09:16.998+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-28T11:09:17.000+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-28T11:12:59.163+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-28T11:12:59.526+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-28T11:12:59.575+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-28T11:12:59.734+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":3}
+{"level":"INFO","timestamp":"2025-11-28T11:12:59.735+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-28T11:34:31.947+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-28T11:34:31.947+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-28T11:34:36.618+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-28T11:34:37.033+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-28T11:34:37.084+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-28T11:34:37.346+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":7}
+{"level":"INFO","timestamp":"2025-11-28T11:34:37.347+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-28T11:36:03.343+0800","caller":"logger/context.go:58","msg":"Processing chat request with Eino","message":"hello","stream":false,"request_id":"33c7babb-683e-4c21-998d-6e221f966392","trace_id":"33c7babb-683e-4c21-998d-6e221f966392"}
+{"level":"INFO","timestamp":"2025-11-28T11:36:18.159+0800","caller":"logger/context.go:58","msg":"Chat completed successfully","response_length":37,"request_id":"33c7babb-683e-4c21-998d-6e221f966392","trace_id":"33c7babb-683e-4c21-998d-6e221f966392"}
+{"level":"INFO","timestamp":"2025-11-28T11:36:40.083+0800","caller":"logger/context.go:58","msg":"Processing chat request with Eino","message":"有没有推荐的饭菜","stream":false,"request_id":"26558a6a-88c5-4939-bfa1-c03f73535863","trace_id":"26558a6a-88c5-4939-bfa1-c03f73535863"}
+{"level":"INFO","timestamp":"2025-11-28T11:38:12.861+0800","caller":"logger/context.go:58","msg":"Chat completed successfully","response_length":4191,"request_id":"26558a6a-88c5-4939-bfa1-c03f73535863","trace_id":"26558a6a-88c5-4939-bfa1-c03f73535863"}
+{"level":"INFO","timestamp":"2025-11-28T11:38:45.506+0800","caller":"logger/context.go:58","msg":"Processing chat request with Eino","message":"我刚问啥来着？","stream":false,"request_id":"072ada50-d848-4e1b-a83c-20edce4bb7ac","trace_id":"072ada50-d848-4e1b-a83c-20edce4bb7ac"}
+{"level":"INFO","timestamp":"2025-11-28T11:39:01.592+0800","caller":"logger/context.go:58","msg":"Chat completed successfully","response_length":248,"request_id":"072ada50-d848-4e1b-a83c-20edce4bb7ac","trace_id":"072ada50-d848-4e1b-a83c-20edce4bb7ac"}
+{"level":"INFO","timestamp":"2025-11-28T14:09:04.093+0800","caller":"logger/log.go:16","msg":"Server shutting down..."}
+{"level":"INFO","timestamp":"2025-11-28T14:09:04.095+0800","caller":"logger/log.go:16","msg":"Server shutdown successfully"}
+{"level":"INFO","timestamp":"2025-11-28T14:09:07.828+0800","caller":"logger/log.go:16","msg":"Logger initialized successfully"}
+{"level":"INFO","timestamp":"2025-11-28T14:09:08.249+0800","caller":"logger/log.go:16","msg":"Database connected successfully with GORM"}
+{"level":"INFO","timestamp":"2025-11-28T14:09:08.296+0800","caller":"logger/log.go:16","msg":"Redis connected successfully","addr":"47.118.19.28:6379"}
+{"level":"INFO","timestamp":"2025-11-28T14:09:08.650+0800","caller":"logger/log.go:16","msg":"Bloom filter initialized","total_paths":10}
+{"level":"INFO","timestamp":"2025-11-28T14:09:08.650+0800","caller":"logger/log.go:16","msg":"Server starting","name":"Blog","port":"0.0.0.0:8002","version":"v0.0.0"}
+{"level":"INFO","timestamp":"2025-11-28T14:12:11.981+0800","caller":"logger/context.go:58","msg":"Chatbot created successfully","name":"durlim","id":1,"request_id":"6647911e-e58f-4bb8-9e94-1ab90afc6d58","trace_id":"6647911e-e58f-4bb8-9e94-1ab90afc6d58"}
+{"level":"INFO","timestamp":"2025-11-28T14:15:21.516+0800","caller":"logger/context.go:58","msg":"Chatbot created successfully","name":"durlim","id":2,"request_id":"607ef123-7603-4976-bcde-08e34a0407a2","trace_id":"607ef123-7603-4976-bcde-08e34a0407a2"}
+{"level":"INFO","timestamp":"2025-11-28T14:19:33.607+0800","caller":"logger/context.go:58","msg":"ChatbotChat completed","chatbot_id":2,"duration_ms":76024,"request_id":"c7c88326-f235-478e-b83b-01ce24516ee8","trace_id":"c7c88326-f235-478e-b83b-01ce24516ee8"}
+{"level":"INFO","timestamp":"2025-11-28T14:20:59.025+0800","caller":"logger/context.go:58","msg":"ChatbotChat completed","chatbot_id":2,"duration_ms":28236,"request_id":"97cbef4c-49ae-482c-9456-96c4062b7184","trace_id":"97cbef4c-49ae-482c-9456-96c4062b7184"}
+{"level":"INFO","timestamp":"2025-11-28T14:21:59.228+0800","caller":"logger/context.go:58","msg":"ChatbotChat completed","chatbot_id":2,"duration_ms":32098,"request_id":"12b96e8c-c77a-49bd-adfb-b51e0170b2cc","trace_id":"12b96e8c-c77a-49bd-adfb-b51e0170b2cc"}
+{"level":"INFO","timestamp":"2025-11-28T14:23:55.176+0800","caller":"logger/context.go:58","msg":"ChatbotChat completed","chatbot_id":2,"duration_ms":49215,"request_id":"88851fc3-a421-4768-b4df-19e7d333d657","trace_id":"88851fc3-a421-4768-b4df-19e7d333d657"}

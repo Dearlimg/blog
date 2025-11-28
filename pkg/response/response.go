@@ -1,6 +1,7 @@
 package response
 
 import (
+	"blog/model/reply"
 	"blog/pkg/logger"
 	"net/http"
 	"time"
@@ -10,12 +11,13 @@ import (
 
 // Response 统一响应结构体
 type Response struct {
-	Code      int         `json:"code"`                 // 业务状态码，0表示成功
-	Message   string      `json:"message"`              // 响应消息
-	Data      interface{} `json:"data,omitempty"`       // 响应数据，可选
-	Timestamp int64       `json:"timestamp"`            // 时间戳（Unix时间戳，秒）
-	RequestID string      `json:"request_id,omitempty"` // 请求ID，用于追踪
-	TraceID   string      `json:"trace_id,omitempty"`   // 追踪ID，用于分布式追踪
+	Code      int             `json:"code"`                 // 业务状态码，0表示成功
+	Message   string          `json:"message"`              // 响应消息
+	Data      interface{}     `json:"data,omitempty"`       // 响应数据，可选
+	Page      *reply.PageInfo `json:"page,omitempty"`       // 分页信息，可选
+	Timestamp int64           `json:"timestamp"`            // 时间戳（Unix时间戳，秒）
+	RequestID string          `json:"request_id,omitempty"` // 请求ID，用于追踪
+	TraceID   string          `json:"trace_id,omitempty"`   // 追踪ID，用于分布式追踪
 }
 
 // ResponseWriter 响应写入器
@@ -50,55 +52,61 @@ func (r *ResponseWriter) getTraceID() string {
 
 // Success 成功响应
 func (r *ResponseWriter) Success(data interface{}) {
-	r.JSON(http.StatusOK, 0, "success", data)
+	r.JSON(http.StatusOK, 0, "success", data, nil)
 }
 
 // SuccessWithMessage 带自定义消息的成功响应
 func (r *ResponseWriter) SuccessWithMessage(message string, data interface{}) {
-	r.JSON(http.StatusOK, 0, message, data)
+	r.JSON(http.StatusOK, 0, message, data, nil)
+}
+
+// SuccessWithPage 带分页信息的成功响应
+func (r *ResponseWriter) SuccessWithPage(data interface{}, pageInfo *reply.PageInfo) {
+	r.JSON(http.StatusOK, 0, "success", data, pageInfo)
 }
 
 // Error 错误响应
 func (r *ResponseWriter) Error(code int, message string) {
-	r.JSON(http.StatusOK, code, message, nil)
+	r.JSON(http.StatusOK, code, message, nil, nil)
 }
 
 // ErrorWithData 带数据的错误响应
 func (r *ResponseWriter) ErrorWithData(code int, message string, data interface{}) {
-	r.JSON(http.StatusOK, code, message, data)
+	r.JSON(http.StatusOK, code, message, data, nil)
 }
 
 // BadRequest 400错误响应
 func (r *ResponseWriter) BadRequest(message string) {
-	r.JSON(http.StatusBadRequest, 400, message, nil)
+	r.JSON(http.StatusBadRequest, 400, message, nil, nil)
 }
 
 // Unauthorized 401错误响应
 func (r *ResponseWriter) Unauthorized(message string) {
-	r.JSON(http.StatusUnauthorized, 401, message, nil)
+	r.JSON(http.StatusUnauthorized, 401, message, nil, nil)
 }
 
 // Forbidden 403错误响应
 func (r *ResponseWriter) Forbidden(message string) {
-	r.JSON(http.StatusForbidden, 403, message, nil)
+	r.JSON(http.StatusForbidden, 403, message, nil, nil)
 }
 
 // NotFound 404错误响应
 func (r *ResponseWriter) NotFound(message string) {
-	r.JSON(http.StatusNotFound, 404, message, nil)
+	r.JSON(http.StatusNotFound, 404, message, nil, nil)
 }
 
 // InternalServerError 500错误响应
 func (r *ResponseWriter) InternalServerError(message string) {
-	r.JSON(http.StatusInternalServerError, 500, message, nil)
+	r.JSON(http.StatusInternalServerError, 500, message, nil, nil)
 }
 
 // JSON 统一的JSON响应方法
-func (r *ResponseWriter) JSON(httpStatus, code int, message string, data interface{}) {
+func (r *ResponseWriter) JSON(httpStatus, code int, message string, data interface{}, pageInfo *reply.PageInfo) {
 	response := Response{
 		Code:      code,
 		Message:   message,
 		Data:      data,
+		Page:      pageInfo,
 		Timestamp: time.Now().Unix(),
 		RequestID: r.getRequestID(),
 		TraceID:   r.getTraceID(),

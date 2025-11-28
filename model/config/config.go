@@ -1,10 +1,12 @@
 package config
 
 type Config struct {
-	App   AppConfig   `yaml:"app"`
-	MySQL MySQLConfig `yaml:"mysql"`
-	Redis RedisConfig `yaml:"redis"`
-	Log   LogConfig   `yaml:"log"`
+	App    AppConfig    `yaml:"app"`
+	MySQL  MySQLConfig  `yaml:"mysql"`
+	Redis  RedisConfig  `yaml:"redis"`
+	Log    LogConfig    `yaml:"log"`
+	Ollama OllamaConfig `yaml:"ollama"`
+	Eino   EinoConfig   `yaml:"eino"`
 }
 
 type AppConfig struct {
@@ -33,4 +35,14 @@ type LogConfig struct {
 	MaxBackups int    `yaml:"max_backups"` // 保留的备份文件数量
 	MaxAge     int    `yaml:"max_age"`     // 保留日志文件的天数
 	Compress   bool   `yaml:"compress"`    // 是否压缩旧日志文件
+}
+
+type OllamaConfig struct {
+	BaseURL string `yaml:"base_url"` // Ollama API 基础URL
+	Model   string `yaml:"model"`    // 默认模型
+	Timeout int    `yaml:"timeout"`  // 请求超时时间（秒）
+}
+
+type EinoConfig struct {
+	MaxHistory int `yaml:"max_history"` // 最大历史记录数
 }

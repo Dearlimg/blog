@@ -12,7 +12,6 @@ import (
 
 func NewRouter() *gin.Engine {
 	r := gin.New()
-	// 请求ID中间件应该最早添加，以便后续中间件和处理器可以使用
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(gin.Recovery(), gin.Logger(), middleware.CorsMiddleware())
 
@@ -30,12 +29,10 @@ func NewRouter() *gin.Engine {
 		})
 		rg := routers.Routers
 		rg.Message.Init(root)
+		rg.Eino.Init(root)
 	}
-
 	collectRoutesAndAddToBloom(r)
-
 	r.Use(middleware.BloomFilterMiddleware())
-
 	return r
 }
 

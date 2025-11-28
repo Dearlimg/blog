@@ -2,43 +2,54 @@ package logic
 
 import (
 	"blog/dao"
+	"blog/global"
 	"blog/model/entity"
 	"blog/model/reply"
 	"blog/model/request"
 	"blog/pkg/errcode"
 	"blog/pkg/logger"
-	"blog/service"
-	"github.com/gin-gonic/gin"
+	"context"
+	"fmt"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 type message struct{}
 
-// GetMessage 获取评论列表（实现旁路缓存策略）
-func (message) GetMessage(ctx *gin.Context) ([]reply.ReplyMessage, errcode.Err) {
-	cacheService := service.GetCacheService()
+// GetMessage 获取评论列表（分页）
+func (message) GetMessage(ctx *gin.Context, param *request.ParamGetMessage) (*reply.MessageListResponse, *reply.PageInfo, errcode.Err) {
+	page := param.GetPage()
+	pageSize := param.GetPageSize()
 
-	// 1. 先查缓存（Cache-Aside Pattern）
-	cachedMessages, err := cacheService.GetMessageList()
-	if err == nil && cachedMessages != nil && len(cachedMessages) > 0 {
-		// 缓存命中，直接返回
-		logger.DebugWithCtx(ctx, "Cache hit for message list",
-			logger.Int("count", len(cachedMessages)),
+	logger.DebugWithCtx(ctx, "GetMessage with pagination",
+		logger.Int("page", page),
+		logger.Int("page_size", pageSize),
+	)
+
+	// 1. 查询数据列表
+	messages, err := dao.Database.Message.GetMessage(ctx, page, pageSize)
+	if err != nil {
+		logger.ErrorWithCtx(ctx, "GetMessage failed",
+			logger.ErrorField(err),
 		)
-		return cachedMessages, nil
+		return nil, nil, errcode.ErrServer
 	}
 
-	// 2. 缓存未命中或出错，查数据库
-	logger.DebugWithCtx(ctx, "Cache miss, querying database")
-	rly, err := dao.Database.Message.GetMessage(ctx)
+	// 2. 统计总数
+	total, err := dao.Database.Message.CountMessage(ctx)
 	if err != nil {
-		return nil, errcode.ErrServer
+		logger.ErrorWithCtx(ctx, "CountMessage failed",
+			logger.ErrorField(err),
+		)
+		return nil, nil, errcode.ErrServer
 	}
 
 	// 3. 转换数据格式
-	result := make([]reply.ReplyMessage, 0, len(rly))
-	for _, msg := range rly {
-		result = append(result, reply.ReplyMessage{
+	list := make([]reply.ReplyMessage, 0, len(messages))
+	for _, msg := range messages {
+		list = append(list, reply.ReplyMessage{
 			Id:        msg.ID,
 			Name:      msg.Name,
 			Email:     msg.Email,
@@ -47,24 +58,20 @@ func (message) GetMessage(ctx *gin.Context) ([]reply.ReplyMessage, errcode.Err) 
 		})
 	}
 
-	// 4. 异步写入缓存（不阻塞返回，即使失败也不影响主流程）
-	// 注意：goroutine 中无法直接使用 ctx，需要获取 request_id
-	requestID := logger.GetRequestID(ctx)
-	go func() {
-		if err := cacheService.SetMessageList(result); err != nil {
-			logger.Warn("Failed to set cache (non-blocking)",
-				logger.ErrorField(err),
-				logger.String("request_id", requestID),
-			)
-		} else {
-			logger.Debug("Cache updated successfully",
-				logger.Int("message_count", len(result)),
-				logger.String("request_id", requestID),
-			)
-		}
-	}()
+	// 4. 构建分页信息
+	pageInfo := reply.NewPageInfo(page, pageSize, total)
 
-	return result, nil
+	// 5. 构建响应
+	result := &reply.MessageListResponse{
+		List: list,
+	}
+
+	logger.DebugWithCtx(ctx, "GetMessage success",
+		logger.Int("count", len(list)),
+		logger.Int64("total", total),
+	)
+
+	return result, pageInfo, nil
 }
 
 // PostMessage 创建新评论（实现旁路缓存策略：写入后删除缓存）
@@ -99,11 +106,10 @@ func (m *message) PostMessage(ctx *gin.Context, param *request.ParamCreateMessag
 	)
 
 	// 2. 删除缓存（使缓存失效，下次查询时会重新从数据库加载）
-	cacheService := service.GetCacheService()
 	// 注意：goroutine 中无法直接使用 ctx，需要获取 request_id
 	requestID := logger.GetRequestID(ctx)
 	go func() {
-		if err := cacheService.DeleteMessageList(); err != nil {
+		if err := deleteMessageListCache(); err != nil {
 			logger.Warn("Failed to delete cache",
 				logger.ErrorField(err),
 				logger.String("request_id", requestID),
@@ -125,4 +131,31 @@ func (m *message) PostMessage(ctx *gin.Context, param *request.ParamCreateMessag
 	}
 
 	return result, nil
+}
+
+// 缓存相关常量和方法
+const (
+	// 评论列表缓存 key
+	messageListCacheKey = "cache:message:list"
+	// 缓存过期时间（5分钟）
+	cacheExpiration = 5 * time.Minute
+)
+
+var cacheCtx = context.Background()
+
+// deleteMessageListCache 删除评论列表缓存（缓存失效）
+// 如果 Redis 不可用，静默失败（不影响主流程）
+func deleteMessageListCache() error {
+	if global.RedisClient == nil {
+		// Redis 未初始化，静默失败
+		return nil
+	}
+
+	err := global.RedisClient.Del(cacheCtx, messageListCacheKey).Err()
+	if err != nil && err != redis.Nil {
+		// Redis 删除失败，返回错误（但不会影响主流程，因为已经在 goroutine 中执行）
+		return fmt.Errorf("failed to delete cache: %w", err)
+	}
+
+	return nil
 }

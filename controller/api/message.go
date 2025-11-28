@@ -14,12 +14,23 @@ type message struct{}
 
 func (message) GetMessage(ctx *gin.Context) {
 	rly := response.NewResponse(ctx)
-	res, err := logic.Logics.Message.GetMessage(ctx)
+
+	// 绑定分页参数
+	param := &request.ParamGetMessage{}
+	if err := ctx.ShouldBindQuery(param); err != nil {
+		rly.Reply(errcode.ErrParamsNotValid.WithDetails(err.Error()))
+		return
+	}
+
+	// 调用逻辑层获取分页数据
+	res, pageInfo, err := logic.Logics.Message.GetMessage(ctx, param)
 	if err != nil {
 		rly.Reply(err)
 		return
 	}
-	rly.Reply(nil, res)
+
+	// 返回带分页信息的响应
+	rly.SuccessWithPage(res, pageInfo)
 }
 
 func (message) PostMessage(ctx *gin.Context) {

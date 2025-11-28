@@ -19,14 +19,16 @@ func NewDAO(db *gorm.DB) *DAO {
 	return &DAO{db: db}
 }
 
-// GetMessage 获取最新的5条评论
-func (d *DAO) GetMessage(ctx context.Context) ([]*entity.Message, error) {
+// GetMessage 获取评论列表（分页）
+func (d *DAO) GetMessage(ctx context.Context, page, pageSize int) ([]*entity.Message, error) {
 	var messages []*entity.Message
 
+	offset := (page - 1) * pageSize
 	err := d.db.WithContext(ctx).
 		Where("id > ?", 0).
 		Order("create_at DESC").
-		Limit(5).
+		Offset(offset).
+		Limit(pageSize).
 		Find(&messages).Error
 
 	if err != nil {
@@ -34,6 +36,21 @@ func (d *DAO) GetMessage(ctx context.Context) ([]*entity.Message, error) {
 	}
 
 	return messages, nil
+}
+
+// CountMessage 统计评论总数
+func (d *DAO) CountMessage(ctx context.Context) (int64, error) {
+	var count int64
+	err := d.db.WithContext(ctx).
+		Model(&entity.Message{}).
+		Where("id > ?", 0).
+		Count(&count).Error
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to count messages: %w", err)
+	}
+
+	return count, nil
 }
 
 // CreateMessage 创建新评论

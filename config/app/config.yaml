@@ -18,3 +18,9 @@ log:
   max_backups: 10     # 保留的备份文件数量
   max_age: 30         # 保留日志文件的天数
   compress: true      # 是否压缩旧日志文件
+ollama:
+  base_url: http://localhost:11434  # Ollama API 基础URL
+  model: deepseek-r1:8b             # 默认模型
+  timeout: 120                      # 请求超时时间（秒）
+eino:
+  max_history: 20                   # 最大历史记录数
