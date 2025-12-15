@@ -7,6 +7,7 @@ type Config struct {
 	Log    LogConfig    `yaml:"log"`
 	Ollama OllamaConfig `yaml:"ollama"`
 	Eino   EinoConfig   `yaml:"eino"`
+	Cache  CacheConfig  `yaml:"cache"`
 }
 
 type AppConfig struct {
@@ -45,4 +46,13 @@ type OllamaConfig struct {
 
 type EinoConfig struct {
 	MaxHistory int `yaml:"max_history"` // 最大历史记录数
+}
+
+type CacheConfig struct {
+	Enabled             bool   `yaml:"enabled"`               // 缓存开关
+	DefaultExpire       string `yaml:"default_expire"`        // 默认缓存过期时间
+	MinExpire           string `yaml:"min_expire"`            // 最小随机过期时间
+	MaxExpire           string `yaml:"max_expire"`            // 最大随机过期时间
+	HotDataExpire       string `yaml:"hot_data_expire"`       // 热点数据缓存时间
+	CacheVersionEnabled bool   `yaml:"cache_version_enabled"` // 是否启用缓存版本号
 }

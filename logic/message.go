@@ -6,6 +6,7 @@ import (
 	"blog/model/entity"
 	"blog/model/reply"
 	"blog/model/request"
+	"blog/pkg/cache"
 	"blog/pkg/errcode"
 	"blog/pkg/logger"
 	"context"
@@ -29,35 +30,14 @@ func (m message) GetMessage(ctx *gin.Context, param *request.ParamGetMessage) (*
 		logger.Int("page_size", pageSize),
 	)
 
-	// 构建缓存 key
-	cacheKey := getMessageCacheKey(page, pageSize)
-
-	// 1. 先尝试从缓存获取
-	if global.RedisClient != nil {
-		cachedData, err := global.RedisClient.Get(cacheCtx, cacheKey).Result()
-		if err == nil {
-			// 缓存命中
-			var cachedResult struct {
-				Result   *reply.MessageListResponse `json:"result"`
-				PageInfo *reply.PageInfo            `json:"page_info"`
-			}
-			if err := json.Unmarshal([]byte(cachedData), &cachedResult); err == nil {
-				logger.DebugWithCtx(ctx, "GetMessage cache hit",
-					logger.String("cache_key", cacheKey),
-				)
-				return cachedResult.Result, cachedResult.PageInfo, nil
-			}
-			logger.WarnWithCtx(ctx, "Failed to unmarshal cached data",
-				logger.ErrorField(err),
-			)
-		} else if err != redis.Nil {
-			logger.WarnWithCtx(ctx, "Failed to get cache",
-				logger.ErrorField(err),
-			)
+	// 尝试使用Redis有序集合实现高效分页
+	if cache.IsCacheEnabled() {
+		if result, pageInfo, err := m.getMessageFromRedis(ctx, page, pageSize); err == nil {
+			return result, pageInfo, nil
 		}
 	}
 
-	// 2. 缓存未命中，从数据库查询
+	// 缓存未命中或Redis不可用，从数据库查询
 	messages, err := dao.Database.Message.GetMessage(ctx, page, pageSize)
 	if err != nil {
 		logger.ErrorWithCtx(ctx, "GetMessage failed",
@@ -66,7 +46,7 @@ func (m message) GetMessage(ctx *gin.Context, param *request.ParamGetMessage) (*
 		return nil, nil, errcode.ErrServer
 	}
 
-	// 3. 统计总数
+	// 统计总数
 	total, err := dao.Database.Message.CountMessage(ctx)
 	if err != nil {
 		logger.ErrorWithCtx(ctx, "CountMessage failed",
@@ -75,7 +55,7 @@ func (m message) GetMessage(ctx *gin.Context, param *request.ParamGetMessage) (*
 		return nil, nil, errcode.ErrServer
 	}
 
-	// 4. 转换数据格式
+	// 转换数据格式
 	list := make([]reply.ReplyMessage, 0, len(messages))
 	for _, msg := range messages {
 		list = append(list, reply.ReplyMessage{
@@ -85,40 +65,24 @@ func (m message) GetMessage(ctx *gin.Context, param *request.ParamGetMessage) (*
 			Content:   msg.Content,
 			Create_at: msg.CreateAt,
 		})
+
+		// 异步将单条消息写入缓存
+		if cache.IsCacheEnabled() {
+			go m.cacheMessage(ctx, msg)
+		}
 	}
 
-	// 5. 构建分页信息
+	// 构建分页信息
 	pageInfo := reply.NewPageInfo(page, pageSize, total)
 
-	// 6. 构建响应
+	// 构建响应
 	result := &reply.MessageListResponse{
 		List: list,
 	}
 
-	// 7. 写入缓存（异步，不影响主流程）
-	if global.RedisClient != nil {
-		go func() {
-			cachedData := struct {
-				Result   *reply.MessageListResponse `json:"result"`
-				PageInfo *reply.PageInfo            `json:"page_info"`
-			}{
-				Result:   result,
-				PageInfo: pageInfo,
-			}
-			jsonData, err := json.Marshal(cachedData)
-			if err == nil {
-				if err := global.RedisClient.Set(cacheCtx, cacheKey, jsonData, cacheExpiration).Err(); err != nil {
-					logger.Warn("Failed to set cache",
-						logger.ErrorField(err),
-						logger.String("cache_key", cacheKey),
-					)
-				} else {
-					logger.Debug("Cache set successfully",
-						logger.String("cache_key", cacheKey),
-					)
-				}
-			}
-		}()
+	// 更新Redis有序集合（异步）
+	if cache.IsCacheEnabled() {
+		go m.updateMessageIdsCache(ctx, messages)
 	}
 
 	logger.DebugWithCtx(ctx, "GetMessage success",
@@ -127,6 +91,148 @@ func (m message) GetMessage(ctx *gin.Context, param *request.ParamGetMessage) (*
 	)
 
 	return result, pageInfo, nil
+}
+
+// getMessageFromRedis 从Redis获取评论列表
+func (m message) getMessageFromRedis(ctx *gin.Context, page, pageSize int) (*reply.MessageListResponse, *reply.PageInfo, error) {
+	// 1. 获取消息ID列表（使用有序集合的分页功能）
+	idKey := getMessageIdsCacheKey()
+	start := int64((page - 1) * pageSize)
+	stop := int64(page*pageSize - 1)
+
+	// ZRevRange：按时间倒序获取消息ID
+	messageIDs, err := global.RedisClient.ZRevRange(ctx, idKey, start, stop).Result()
+	if err != nil {
+		logger.WarnWithCtx(ctx, "Failed to get message IDs from Redis",
+			logger.ErrorField(err),
+			logger.String("key", idKey),
+		)
+		return nil, nil, err
+	}
+
+	if len(messageIDs) == 0 {
+		// Redis中没有消息ID列表，让主函数从数据库查询
+		return nil, nil, fmt.Errorf("no message IDs in cache")
+	}
+
+	// 2. 获取消息总数
+	total, err := global.RedisClient.ZCard(ctx, idKey).Result()
+	if err != nil {
+		logger.WarnWithCtx(ctx, "Failed to get message count from Redis",
+			logger.ErrorField(err),
+			logger.String("key", idKey),
+		)
+		// 总数获取失败，从数据库查询
+		if total, err = dao.Database.Message.CountMessage(ctx); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	// 3. 批量获取消息内容（使用Pipeline减少网络开销）
+	pipeline := global.RedisClient.Pipeline()
+	cmds := make([]*redis.StringCmd, len(messageIDs))
+
+	for i, id := range messageIDs {
+		messageKey := fmt.Sprintf("%s:%s", messageCacheKeyPrefix, id)
+		cmds[i] = pipeline.Get(ctx, messageKey)
+	}
+
+	_, err = pipeline.Exec(ctx)
+	if err != nil {
+		logger.WarnWithCtx(ctx, "Failed to get messages from Redis pipeline",
+			logger.ErrorField(err),
+		)
+		return nil, nil, err
+	}
+
+	// 4. 组装结果
+	list := make([]reply.ReplyMessage, 0, len(messageIDs))
+	for i, cmd := range cmds {
+		if data, err := cmd.Result(); err == nil {
+			var message entity.Message
+			if err := json.Unmarshal([]byte(data), &message); err == nil {
+				list = append(list, reply.ReplyMessage{
+					Id:        message.ID,
+					Name:      message.Name,
+					Email:     message.Email,
+					Content:   message.Content,
+					Create_at: message.CreateAt,
+				})
+			}
+		} else if err != redis.Nil {
+			logger.WarnWithCtx(ctx, "Failed to get message from Redis",
+				logger.ErrorField(err),
+				logger.String("id", messageIDs[i]),
+			)
+		}
+	}
+
+	// 如果缓存的消息数量不足，返回失败，让主函数从数据库查询
+	if len(list) < len(messageIDs) {
+		return nil, nil, fmt.Errorf("insufficient cached messages")
+	}
+
+	// 构建分页信息
+	pageInfo := reply.NewPageInfo(page, pageSize, total)
+
+	logger.DebugWithCtx(ctx, "GetMessage from Redis",
+		logger.Int("count", len(list)),
+		logger.Int64("total", total),
+	)
+
+	return &reply.MessageListResponse{List: list}, pageInfo, nil
+}
+
+// cacheMessage 缓存单条评论消息
+func (m message) cacheMessage(ctx context.Context, message *entity.Message) {
+	if !cache.IsCacheEnabled() {
+		return
+	}
+
+	messageKey := getMessageItemCacheKey(message.ID)
+	jsonData, err := json.Marshal(message)
+	if err != nil {
+		logger.Warn("Failed to marshal message",
+			logger.ErrorField(err),
+			logger.Int32("message_id", message.ID),
+		)
+		return
+	}
+
+	// 使用随机过期时间
+	expire := cache.GetRandomExpiration()
+	if err := global.RedisClient.Set(ctx, messageKey, jsonData, expire).Err(); err != nil {
+		logger.Warn("Failed to cache message",
+			logger.ErrorField(err),
+			logger.String("cache_key", messageKey),
+		)
+	}
+}
+
+// updateMessageIdsCache 更新评论消息ID列表缓存
+func (m message) updateMessageIdsCache(ctx context.Context, messages []*entity.Message) {
+	if !cache.IsCacheEnabled() || len(messages) == 0 {
+		return
+	}
+
+	idKey := getMessageIdsCacheKey()
+	pipe := global.RedisClient.Pipeline()
+
+	for _, msg := range messages {
+		// 分数使用消息ID（假设ID是递增的）或创建时间戳
+		score := float64(msg.ID)
+		pipe.ZAdd(ctx, idKey, redis.Z{Score: score, Member: msg.ID})
+	}
+
+	// 设置过期时间
+	pipe.Expire(ctx, idKey, cache.GetHotDataExpiration())
+
+	if _, err := pipe.Exec(ctx); err != nil {
+		logger.Warn("Failed to update message IDs cache",
+			logger.ErrorField(err),
+			logger.String("cache_key", idKey),
+		)
+	}
 }
 
 // PostMessage 创建新评论（实现旁路缓存策略：写入后删除缓存）
@@ -192,38 +298,45 @@ func (m *message) PostMessage(ctx *gin.Context, param *request.ParamCreateMessag
 const (
 	// 评论列表缓存 key 前缀
 	messageListCacheKeyPrefix = "cache:message:list"
-	// 缓存过期时间（5分钟）
-	cacheExpiration = 5 * time.Minute
+	// 单条消息缓存 key 前缀
+	messageCacheKeyPrefix = "cache:message:item"
+	// 消息ID列表缓存 key 前缀
+	messageIdsCacheKeyPrefix = "cache:message:ids"
 )
 
 var cacheCtx = context.Background()
 
-// getMessageCacheKey 获取消息列表缓存 key
+// getMessageCacheKey 获取消息列表缓存 key（保留原方法兼容）
 func getMessageCacheKey(page, pageSize int) string {
 	return fmt.Sprintf("%s:page:%d:size:%d", messageListCacheKeyPrefix, page, pageSize)
 }
 
-// deleteMessageListCache 删除评论列表缓存（缓存失效，删除所有分页缓存）
+// getMessageIdsCacheKey 获取消息ID列表缓存 key
+func getMessageIdsCacheKey() string {
+	return messageIdsCacheKeyPrefix
+}
+
+// getMessageItemCacheKey 获取单条消息缓存 key
+func getMessageItemCacheKey(messageID int32) string {
+	return fmt.Sprintf("%s:%d", messageCacheKeyPrefix, messageID)
+}
+
+// deleteMessageListCache 删除评论列表缓存（缓存失效，删除所有相关缓存）
 // 如果 Redis 不可用，静默失败（不影响主流程）
 func deleteMessageListCache() error {
-	if global.RedisClient == nil {
-		// Redis 未初始化，静默失败
+	if !cache.IsCacheEnabled() {
 		return nil
 	}
 
-	// 使用 pattern 删除所有相关的分页缓存
-	pattern := messageListCacheKeyPrefix + ":*"
-	iter := global.RedisClient.Scan(cacheCtx, 0, pattern, 0).Iterator()
-	var keys []string
-	for iter.Next(cacheCtx) {
-		keys = append(keys, iter.Val())
-	}
-	if err := iter.Err(); err != nil {
-		return fmt.Errorf("failed to scan cache keys: %w", err)
+	// 使用缓存工具包删除所有相关缓存
+	patterns := []string{
+		messageListCacheKeyPrefix + ":*",
+		messageIdsCacheKeyPrefix,
+		messageCacheKeyPrefix + ":*",
 	}
 
-	if len(keys) > 0 {
-		if err := global.RedisClient.Del(cacheCtx, keys...).Err(); err != nil {
+	for _, pattern := range patterns {
+		if err := cache.DeleteCacheByPattern(cacheCtx, pattern); err != nil {
 			return fmt.Errorf("failed to delete cache: %w", err)
 		}
 	}

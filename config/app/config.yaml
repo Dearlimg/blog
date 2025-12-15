@@ -4,9 +4,9 @@ app:
   start_time: 2025.5.7
   port: 0.0.0.0:8002
 mysql:
-  dns: root:sta_go@tcp(47.118.19.28:3307)/blog?charset=utf8mb4&parseTime=True&loc=Local
+  dns: root:sta_go@tcp(43.138.26.45:3307)/blog?charset=utf8mb4&parseTime=True&loc=Local
 redis:
-  addr: 47.118.19.28:6379
+  addr: 43.138.26.45:6379
   password: sta_go
   db: 0
 log:
@@ -24,3 +24,10 @@ ollama:
   timeout: 120                      # 请求超时时间（秒）
 eino:
   max_history: 20                   # 最大历史记录数
+cache:
+  enabled: true                     # 缓存开关
+  default_expire: 5m                # 默认缓存过期时间
+  min_expire: 5m                    # 最小随机过期时间
+  max_expire: 10m                   # 最大随机过期时间
+  hot_data_expire: 30m              # 热点数据缓存时间
+  cache_version_enabled: true       # 是否启用缓存版本号
