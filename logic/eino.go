@@ -6,6 +6,7 @@ import (
 	"blog/model/entity"
 	"blog/model/reply"
 	"blog/model/request"
+	"blog/pkg/cache"
 	"blog/pkg/errcode"
 	"blog/pkg/logger"
 	"bytes"
@@ -697,8 +698,10 @@ func (e *eino) SaveChatHistory(ctx context.Context, chatbotID int32, role, conte
 const (
 	// 对话历史缓存 key 前缀
 	chatHistoryCacheKeyPrefix = "cache:chatbot:history"
-	// 缓存过期时间（5分钟）
-	chatHistoryCacheExpiration = 5 * time.Minute
+	// 单条消息缓存 key 前缀
+	chatMessageCacheKeyPrefix = "cache:chatbot:message"
+	// 消息ID列表缓存 key 前缀
+	chatMessageIdsCacheKeyPrefix = "cache:chatbot:message:ids"
 )
 
 // getChatHistoryCacheKey 获取对话历史缓存 key
@@ -706,29 +709,27 @@ func getChatHistoryCacheKey(chatbotID int32, page, pageSize int) string {
 	return fmt.Sprintf("%s:%d:page:%d:size:%d", chatHistoryCacheKeyPrefix, chatbotID, page, pageSize)
 }
 
+// getChatMessageCacheKey 获取单条消息缓存 key
+func getChatMessageCacheKey(messageID int32) string {
+	return fmt.Sprintf("%s:%d", chatMessageCacheKeyPrefix, messageID)
+}
+
+// getChatMessageIdsCacheKey 获取消息ID列表缓存 key
+func getChatMessageIdsCacheKey(chatbotID int32) string {
+	return fmt.Sprintf("%s:%d", chatMessageIdsCacheKeyPrefix, chatbotID)
+}
+
 // deleteChatHistoryCache 删除对话历史缓存（缓存失效，删除指定聊天机器人的所有分页缓存）
 // 如果 Redis 不可用，静默失败（不影响主流程）
 func deleteChatHistoryCache(chatbotID int32) error {
-	if global.RedisClient == nil {
-		// Redis 未初始化，静默失败
+	if !cache.IsCacheEnabled() {
 		return nil
 	}
 
-	// 使用 pattern 删除该聊天机器人的所有分页缓存
+	// 使用缓存工具包删除该聊天机器人的所有分页缓存
 	pattern := fmt.Sprintf("%s:%d:*", chatHistoryCacheKeyPrefix, chatbotID)
-	iter := global.RedisClient.Scan(context.Background(), 0, pattern, 0).Iterator()
-	var keys []string
-	for iter.Next(context.Background()) {
-		keys = append(keys, iter.Val())
-	}
-	if err := iter.Err(); err != nil {
-		return fmt.Errorf("failed to scan cache keys: %w", err)
-	}
-
-	if len(keys) > 0 {
-		if err := global.RedisClient.Del(context.Background(), keys...).Err(); err != nil {
-			return fmt.Errorf("failed to delete cache: %w", err)
-		}
+	if err := cache.DeleteCacheByPattern(context.Background(), pattern); err != nil {
+		return fmt.Errorf("failed to delete cache: %w", err)
 	}
 
 	return nil
@@ -745,35 +746,14 @@ func (e *eino) GetChatHistory(ctx *gin.Context, chatbotID int32, param *request.
 		logger.Int("page_size", pageSize),
 	)
 
-	// 构建缓存 key
-	cacheKey := getChatHistoryCacheKey(chatbotID, page, pageSize)
-
-	// 1. 先尝试从缓存获取
-	if global.RedisClient != nil {
-		cachedData, err := global.RedisClient.Get(context.Background(), cacheKey).Result()
-		if err == nil {
-			// 缓存命中
-			var cachedResult struct {
-				Result   *reply.ChatHistoryResponse `json:"result"`
-				PageInfo *reply.PageInfo            `json:"page_info"`
-			}
-			if err := json.Unmarshal([]byte(cachedData), &cachedResult); err == nil {
-				logger.DebugWithCtx(ctx, "GetChatHistory cache hit",
-					logger.String("cache_key", cacheKey),
-				)
-				return cachedResult.Result, cachedResult.PageInfo, nil
-			}
-			logger.WarnWithCtx(ctx, "Failed to unmarshal cached data",
-				logger.ErrorField(err),
-			)
-		} else if err != redis.Nil {
-			logger.WarnWithCtx(ctx, "Failed to get cache",
-				logger.ErrorField(err),
-			)
+	// 尝试使用Redis有序集合实现高效分页
+	if cache.IsCacheEnabled() {
+		if result, pageInfo, err := e.getChatHistoryFromRedis(ctx, chatbotID, page, pageSize); err == nil {
+			return result, pageInfo, nil
 		}
 	}
 
-	// 2. 缓存未命中，从数据库查询
+	// 缓存未命中或Redis不可用，从数据库查询
 	history, err := dao.Database.Chatbot.GetChatHistory(ctx, chatbotID, page, pageSize)
 	if err != nil {
 		logger.ErrorWithCtx(ctx, "GetChatHistory failed",
@@ -782,7 +762,7 @@ func (e *eino) GetChatHistory(ctx *gin.Context, chatbotID int32, param *request.
 		return nil, nil, errcode.ErrServer.WithDetails(err.Error())
 	}
 
-	// 3. 统计总数
+	// 统计总数
 	total, err := dao.Database.Chatbot.CountChatHistory(ctx, chatbotID)
 	if err != nil {
 		logger.ErrorWithCtx(ctx, "CountChatHistory failed",
@@ -791,7 +771,7 @@ func (e *eino) GetChatHistory(ctx *gin.Context, chatbotID int32, param *request.
 		return nil, nil, errcode.ErrServer.WithDetails(err.Error())
 	}
 
-	// 4. 转换数据格式
+	// 转换数据格式
 	list := make([]reply.ChatHistoryItem, 0, len(history))
 	for _, h := range history {
 		list = append(list, reply.ChatHistoryItem{
@@ -800,41 +780,24 @@ func (e *eino) GetChatHistory(ctx *gin.Context, chatbotID int32, param *request.
 			Content:   h.Content,
 			CreatedAt: h.CreatedAt,
 		})
+
+		// 异步将单条消息写入缓存
+		if cache.IsCacheEnabled() {
+			go e.cacheChatMessage(ctx, h)
+		}
 	}
 
-	// 5. 构建分页信息
+	// 构建分页信息
 	pageInfo := reply.NewPageInfo(page, pageSize, total)
 
-	// 6. 构建响应
+	// 构建响应
 	result := &reply.ChatHistoryResponse{
 		List: list,
 	}
 
-	// 7. 写入缓存（异步，不影响主流程）
-	if global.RedisClient != nil {
-		go func() {
-			cachedData := struct {
-				Result   *reply.ChatHistoryResponse `json:"result"`
-				PageInfo *reply.PageInfo            `json:"page_info"`
-			}{
-				Result:   result,
-				PageInfo: pageInfo,
-			}
-			jsonData, err := json.Marshal(cachedData)
-			if err == nil {
-				cacheExpiration := 5 * time.Minute
-				if err := global.RedisClient.Set(context.Background(), cacheKey, jsonData, cacheExpiration).Err(); err != nil {
-					logger.Warn("Failed to set cache",
-						logger.ErrorField(err),
-						logger.String("cache_key", cacheKey),
-					)
-				} else {
-					logger.Debug("Cache set successfully",
-						logger.String("cache_key", cacheKey),
-					)
-				}
-			}
-		}()
+	// 更新Redis有序集合（异步）
+	if cache.IsCacheEnabled() {
+		go e.updateChatMessageIdsCache(ctx, chatbotID, history)
 	}
 
 	logger.DebugWithCtx(ctx, "GetChatHistory success",
@@ -843,4 +806,145 @@ func (e *eino) GetChatHistory(ctx *gin.Context, chatbotID int32, param *request.
 	)
 
 	return result, pageInfo, nil
+}
+
+// getChatHistoryFromRedis 从Redis获取聊天历史
+func (e *eino) getChatHistoryFromRedis(ctx *gin.Context, chatbotID int32, page, pageSize int) (*reply.ChatHistoryResponse, *reply.PageInfo, error) {
+	// 1. 获取消息ID列表（使用有序集合的分页功能）
+	idKey := getChatMessageIdsCacheKey(chatbotID)
+	start := int64((page - 1) * pageSize)
+	stop := int64(page*pageSize - 1)
+
+	// ZRevRange：按时间倒序获取消息ID
+	messageIDs, err := global.RedisClient.ZRevRange(ctx, idKey, start, stop).Result()
+	if err != nil {
+		logger.WarnWithCtx(ctx, "Failed to get message IDs from Redis",
+			logger.ErrorField(err),
+			logger.String("key", idKey),
+		)
+		return nil, nil, err
+	}
+
+	if len(messageIDs) == 0 {
+		// 没有消息，返回空结果
+		return &reply.ChatHistoryResponse{List: []reply.ChatHistoryItem{}}, reply.NewPageInfo(page, pageSize, 0), nil
+	}
+
+	// 2. 获取消息总数
+	total, err := global.RedisClient.ZCard(ctx, idKey).Result()
+	if err != nil {
+		logger.WarnWithCtx(ctx, "Failed to get message count from Redis",
+			logger.ErrorField(err),
+			logger.String("key", idKey),
+		)
+		// 总数获取失败，从数据库查询
+		if total, err = dao.Database.Chatbot.CountChatHistory(ctx, chatbotID); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	// 3. 批量获取消息内容（使用Pipeline减少网络开销）
+	pipeline := global.RedisClient.Pipeline()
+	cmds := make([]*redis.StringCmd, len(messageIDs))
+
+	for i, id := range messageIDs {
+		messageKey := fmt.Sprintf("%s:%s", chatMessageCacheKeyPrefix, id)
+		cmds[i] = pipeline.Get(ctx, messageKey)
+	}
+
+	_, err = pipeline.Exec(ctx)
+	if err != nil {
+		logger.WarnWithCtx(ctx, "Failed to get messages from Redis pipeline",
+			logger.ErrorField(err),
+		)
+		return nil, nil, err
+	}
+
+	// 4. 组装结果
+	list := make([]reply.ChatHistoryItem, 0, len(messageIDs))
+	for i, cmd := range cmds {
+		if data, err := cmd.Result(); err == nil {
+			var message entity.ChatHistory
+			if err := json.Unmarshal([]byte(data), &message); err == nil {
+				list = append(list, reply.ChatHistoryItem{
+					ID:        message.ID,
+					Role:      message.Role,
+					Content:   message.Content,
+					CreatedAt: message.CreatedAt,
+				})
+			}
+		} else if err != redis.Nil {
+			logger.WarnWithCtx(ctx, "Failed to get message from Redis",
+				logger.ErrorField(err),
+				logger.String("id", messageIDs[i]),
+			)
+		}
+	}
+
+	// 如果缓存的消息数量不足，返回失败，让主函数从数据库查询
+	if len(list) < len(messageIDs) {
+		return nil, nil, fmt.Errorf("insufficient cached messages")
+	}
+
+	// 构建分页信息
+	pageInfo := reply.NewPageInfo(page, pageSize, total)
+
+	logger.DebugWithCtx(ctx, "GetChatHistory from Redis",
+		logger.Int("count", len(list)),
+		logger.Int64("total", total),
+	)
+
+	return &reply.ChatHistoryResponse{List: list}, pageInfo, nil
+}
+
+// cacheChatMessage 缓存单条聊天消息
+func (e *eino) cacheChatMessage(ctx context.Context, message *entity.ChatHistory) {
+	if !cache.IsCacheEnabled() {
+		return
+	}
+
+	messageKey := getChatMessageCacheKey(message.ID)
+	jsonData, err := json.Marshal(message)
+	if err != nil {
+		logger.Warn("Failed to marshal chat message",
+			logger.ErrorField(err),
+			logger.Int32("message_id", message.ID),
+		)
+		return
+	}
+
+	// 使用随机过期时间
+	expire := cache.GetRandomExpiration()
+	if err := global.RedisClient.Set(ctx, messageKey, jsonData, expire).Err(); err != nil {
+		logger.Warn("Failed to cache chat message",
+			logger.ErrorField(err),
+			logger.String("cache_key", messageKey),
+		)
+	}
+}
+
+// updateChatMessageIdsCache 更新聊天消息ID列表缓存
+func (e *eino) updateChatMessageIdsCache(ctx context.Context, chatbotID int32, messages []*entity.ChatHistory) {
+	if !cache.IsCacheEnabled() || len(messages) == 0 {
+		return
+	}
+
+	idKey := getChatMessageIdsCacheKey(chatbotID)
+	pipe := global.RedisClient.Pipeline()
+
+	for _, msg := range messages {
+		// 分数使用消息ID（假设ID是递增的）或创建时间戳
+		score := float64(msg.ID)
+		pipe.ZAdd(ctx, idKey, redis.Z{Score: score, Member: msg.ID})
+	}
+
+	// 设置过期时间
+	pipe.Expire(ctx, idKey, cache.GetHotDataExpiration())
+
+	if _, err := pipe.Exec(ctx); err != nil {
+		logger.Warn("Failed to update chat message IDs cache",
+			logger.ErrorField(err),
+			logger.String("cache_key", idKey),
+		)
+	}
 }

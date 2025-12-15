@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"blog/global"
+	"blog/model/entity"
 	"fmt"
 	"time"
 
@@ -38,6 +39,15 @@ func NewDB(dsn string) (*gorm.DB, error) {
 	// 测试连接
 	if err = sqlDB.Ping(); err != nil {
 		return nil, fmt.Errorf("database connection verification failed: %w", err)
+	}
+
+	// 自动迁移数据库表
+	if err := db.AutoMigrate(
+		&entity.Chatbot{},
+		&entity.ChatHistory{},
+		&entity.Message{},
+	); err != nil {
+		return nil, fmt.Errorf("failed to auto-migrate tables: %w", err)
 	}
 
 	// 保存到 global
